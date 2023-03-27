@@ -5,6 +5,7 @@
 #![warn(missing_docs)]
 
 mod manager_crypt;
+mod manager_rng;
 
 #[cfg(test)]
 mod tests {
@@ -21,9 +22,16 @@ mod tests {
         assert!(data[0]==4237446418);
         assert!(data[1]==1255206224);
     }
-}
 
-// PLACEHOLDER for get_next_rand funciton
-fn next() -> u32 {
-    1
+
+    #[test]
+    fn xtea_keygen() {
+        let seed: u32 = 1;
+        let rng_mng: manager_rng::RandomNumberGeneratorManager = manager_rng::RandomNumberGeneratorManager::new_PseudoRNG(&seed);
+        let crypt_mng = manager_crypt::CryptographyManager::new(rng_mng.generator);
+        let key = crypt_mng.XTEA_generate_key();
+        println!("{:#?}", key);
+        
+        assert!(key.0[0]==1);
+    }
 }

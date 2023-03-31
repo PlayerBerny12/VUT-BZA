@@ -1,6 +1,8 @@
 //! Manager module for random number generator modules
 
+#[cfg(feature = "prng")]
 use self::prng::PseudoRNG;
+#[cfg(feature = "prng")]
 mod prng;
 
 // Generic trait for all random number generators
@@ -20,8 +22,15 @@ pub struct RandomNumberGeneratorManager {
 
 // Impl for random number generator manager structure
 impl RandomNumberGeneratorManager {
+    #[cfg(feature = "prng")]
     pub fn new_PseudoRNG(seed: &u32, min: u32, max: u32) -> Self {
-        RandomNumberGeneratorManager { seed: *seed, generator: Box::new(PseudoRNG::new(seed)), min: min, max: max, entropy: 0 }
+        RandomNumberGeneratorManager { 
+            seed: *seed, 
+            generator: Box::new(PseudoRNG::new(seed)), 
+            min: min, 
+            max: max, 
+            entropy: 0 
+        }
     }
 
     pub fn new_seed(&mut self, seed: &u32) {

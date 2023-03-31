@@ -8,4 +8,6 @@ edition = "2021"
 [dependencies]
 
 [features]
-rsa = []
+default = ["xtea", "prng"]
+xtea = []
+prng = []

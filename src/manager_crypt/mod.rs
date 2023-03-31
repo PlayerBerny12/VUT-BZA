@@ -8,7 +8,7 @@ pub mod xtea;
 #[derive(Debug)]
 enum Encryption {
     NONE,
-    RSA,
+    #[cfg(feature = "xtea")]
     XTEA,
 }
 
@@ -17,33 +17,35 @@ pub struct CryptographyManager {
     encryption: Encryption,
     rng: Box<dyn manager_rng::RNG>,
     key_lenght: u32,
+    #[cfg(feature = "xtea")]
     XTEAConfig: xtea::XTEAConfig,
 }
 
 // Impl for cryptography manager structure
 impl CryptographyManager {
     pub fn new(rng: Box<dyn manager_rng::RNG>) -> Self {
+        #[cfg(feature = "xtea")]
         let xtea_config = xtea::XTEAConfig;
         CryptographyManager{
             encryption: Encryption::NONE,
             rng: rng,
             key_lenght: 0,
+            #[cfg(feature = "xtea")]
             XTEAConfig: xtea_config
         }
     }
 
-    pub fn EC_encrypt(self) {
-        
-    }
-
+    #[cfg(feature = "xtea")]
     pub fn XTEA_encrypt(self, message: &mut Bytes, key: xtea::Key) -> bool {
         false
     }
 
+    #[cfg(feature = "xtea")]
     pub fn XTEA_decrypt(self, message: &mut Bytes, key: xtea::Key) -> bool {
         false
     }
 
+    #[cfg(feature = "xtea")]
     pub fn XTEA_generate_key(self) -> xtea::Key {
         xtea::gen_key(&|| self.rng.next())
     }

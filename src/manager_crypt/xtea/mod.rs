@@ -2,6 +2,8 @@
 
 use std::{num::Wrapping};
 
+pub struct XTEAConfig;
+
 #[derive(Debug)]
 pub struct Key(pub [u32; 4]);
 

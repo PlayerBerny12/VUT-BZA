@@ -28,7 +28,8 @@ mod tests {
     fn xtea_keygen() {
         let seed: u32 = 1;
         let rng_mng: manager_rng::RandomNumberGeneratorManager = manager_rng::RandomNumberGeneratorManager::new_PseudoRNG(&seed, 0, 1);
-        let crypt_mng = manager_crypt::CryptographyManager::new(rng_mng.generator);
+        let rng_call_binding = &|| rng_mng.generator.next();
+        let crypt_mng = manager_crypt::CryptographyManager::new(rng_call_binding);
         let key = crypt_mng.XTEA_generate_key();
         println!("{:#?}", key);
         

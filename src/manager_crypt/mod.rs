@@ -13,17 +13,18 @@ enum Encryption {
 }
 
 // Cryptography manager structure
-pub struct CryptographyManager {
+pub struct CryptographyManager<'a> {
     encryption: Encryption,
-    rng: Box<dyn manager_rng::RNG>,
+    // rng: Box<dyn manager_rng::RNG>,
+    rng: &'a dyn Fn() -> u32,
     key_lenght: u32,
     #[cfg(feature = "xtea")]
     XTEAConfig: xtea::XTEAConfig,
 }
 
 // Impl for cryptography manager structure
-impl CryptographyManager {
-    pub fn new(rng: Box<dyn manager_rng::RNG>) -> Self {
+impl<'a> CryptographyManager<'a> {
+    pub fn new(rng: &'a dyn Fn() -> u32) -> Self {
         #[cfg(feature = "xtea")]
         let xtea_config = xtea::XTEAConfig;
         CryptographyManager{
@@ -47,6 +48,6 @@ impl CryptographyManager {
 
     #[cfg(feature = "xtea")]
     pub fn XTEA_generate_key(self) -> xtea::Key {
-        xtea::gen_key(&|| self.rng.next())
+        xtea::gen_key(self.rng)
     }
 }

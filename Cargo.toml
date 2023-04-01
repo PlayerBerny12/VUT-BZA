@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 
 [features]
-default = ["xtea", "prng"]
+default = ["xtea", "xorshitf32"]
 xtea = []
-prng = []
+xorshitf32 = []

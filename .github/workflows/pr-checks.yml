@@ -1,0 +1,29 @@
+name: Rust
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:      
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3  
+    - name: Build
+      run: cargo build --release --verbose
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3  
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Install cargo-mutants  
+      run: cargo install --locked cargo-mutants
+    - name: Install cargo-mutants  
+      run: cargo mutants
+      continue-on-error: true

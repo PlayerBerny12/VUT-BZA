@@ -8,7 +8,7 @@ pub struct XTEAConfig;
 pub struct Key(pub [u32; 4]);
 
 // Encrypts data using num_rounds of rounds of XTEA algorithm using key
-pub fn encrypt(num_rounds: u32, data: &mut [u32; 2], key: Key) {
+pub fn encrypt(num_rounds: u32, data: &mut [u32; 2], key: &Key) {
     let mut v0: Wrapping<u32> = Wrapping(data[0]);
     let mut v1: Wrapping<u32> = Wrapping(data[1]);
     let mut sum: Wrapping<u32> = Wrapping(0);
@@ -26,11 +26,11 @@ pub fn encrypt(num_rounds: u32, data: &mut [u32; 2], key: Key) {
 }
 
 // Decrypts data using num_rounds of rounds of XTEA algorithm using key
-pub fn decrypt(num_rounds: u32, data: &mut [u32; 2], key: Key) {
+pub fn decrypt(num_rounds: u32, data: &mut [u32; 2], key: &Key) {
     let mut v0: Wrapping<u32> = Wrapping(data[0]);
     let mut v1: Wrapping<u32> = Wrapping(data[1]);
     let mut delta: Wrapping<u32> = Wrapping(0x9E3779B9);
-    let mut sum: Wrapping<u32> = Wrapping(delta.0 * num_rounds);
+    let mut sum: Wrapping<u32> = Wrapping(delta.0) * Wrapping(num_rounds);
 
     for _ in 0..num_rounds {
         v1 -=
@@ -44,10 +44,10 @@ pub fn decrypt(num_rounds: u32, data: &mut [u32; 2], key: Key) {
 }
 
 // Generates keypair for XTEA encryption/decryption
-pub fn gen_key(next_rn: &dyn Fn() -> u32) -> Key {
+pub fn gen_key(next_rng: &dyn Fn() -> u32) -> Key {
     let mut k = Key([0, 0, 0, 0]);
     for i in k.0.iter_mut() {
-        *i = next_rn();
+        *i = next_rng();
     }
 
     assert!(k.0 != [0, 0, 0, 0]);
@@ -57,16 +57,54 @@ pub fn gen_key(next_rn: &dyn Fn() -> u32) -> Key {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::manager_rng::xorshift::Xorshift32RNG;
+    use crate::manager_rng::RNG;
+    use std::sync::{Arc, Mutex};
+
+    struct MockRNG {
+        state: u32,
+        rn: [u32; 4],
+    }
+
+    impl RNG for MockRNG {
+        fn new(seed: &u32) -> MockRNG {
+            MockRNG {
+                state: *seed,
+                rn: [165448890, 42994, 78941639, 96],
+            }
+        }
+
+        fn next(&mut self) -> u32 {
+            let value = self.rn[self.state as usize];
+            self.state += 1;
+
+            value
+        }
+    }
 
     #[test]
-    fn test_encrypt() {
-        let key = Key([0, 0, 0, 0]);
-        println!("{:#?}", key);
-        let mut data = [0, 0];
-        encrypt(64, &mut data, key);
-        println!("{} {}", data[0], data[1]);
-        // assert_eq!(key.0, [4, 4, 4, 4]);
-        assert!(data[0] == 4237446418);
-        assert!(data[1] == 1255206224);
+    fn test_keygen() {
+        let seed = 0;
+        let rngMut = Arc::new(Mutex::new(MockRNG::new(&seed)));
+
+        let key = gen_key(&|| rngMut.lock().unwrap().next());
+
+        assert_eq!(key.0, [165448890, 42994, 78941639, 96])
+    }
+
+    #[test]
+    fn test_encrypt_decrypt() {
+        let data_out = [123456789u32, 987654321u32];
+        let mut data = data_out;
+        let key = Key([100, 200, 300, 400]);
+        let num_rounds = 128;
+
+        encrypt(num_rounds, &mut data, &key);
+
+        assert_eq!(data, [2613847215u32, 3063251712u32]);
+
+        decrypt(num_rounds, &mut data, &key);
+
+        assert_eq!(data, data_out);
     }
 }

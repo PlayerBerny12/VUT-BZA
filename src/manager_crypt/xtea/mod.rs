@@ -94,14 +94,14 @@ mod tests {
 
     #[test]
     fn test_encrypt_decrypt() {
-        let data_out = [123456789u32, 987654321u32];
+        let data_out = [123456789, 987654321];
         let mut data = data_out;
         let key = Key([100, 200, 300, 400]);
         let num_rounds = 128;
 
         encrypt(num_rounds, &mut data, &key);
 
-        assert_eq!(data, [2613847215u32, 3063251712u32]);
+        assert_eq!(data, [2613847215, 3063251712]);
 
         decrypt(num_rounds, &mut data, &key);
 

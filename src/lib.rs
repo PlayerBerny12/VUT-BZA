@@ -4,26 +4,41 @@
 #![allow(non_snake_case)]
 #![warn(missing_docs)]
 
-use manager_crypt::CryptographyManager;
+use manager_crypt::{CryptographyManager, xtea, Encryption};
 use manager_rng::RandomNumberGeneratorManager;
 
 mod manager_crypt;
 mod manager_rng;
 
-// static CRYPTOGRAPHY_PROFILE: CryptographyManager;
-// static RANDOM_PROFILE: RandomNumberGeneratorManager = null();
-
-/// Setting global profile for cryptography
-pub fn set_cryptography_profile(profile: CryptographyManager) {}
-
-/// Setting global profile for random number generators
-pub fn set_random_profile(profile: RandomNumberGeneratorManager) {}
-
 /// High-level encryption method
-pub fn encrypt() {}
+pub fn encrypt(profile: CryptographyManager, mut message: String, key: xtea::Key) -> Vec<u32> {
+    if profile.encryption == Encryption::XTEA {
+        profile.XTEA_encrypt(&mut message, key);
+    }
+
+    panic!("Not supported algorithm");
+}
 
 /// High-level decryption method
-pub fn decrypt() {}
+pub fn decrypt(profile: CryptographyManager, mut message: Vec<u32>, key: xtea::Key) -> String {
+    if profile.encryption == Encryption::XTEA {
+        profile.XTEA_decrypt(&mut message, key);
+    }
+
+    panic!("Not supported algorithm");
+}
 
 /// High-level method for generating random numbers
-pub fn random() {}
+pub fn random(mut profile: RandomNumberGeneratorManager) -> u32 {
+    profile.generator.next()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        
+    }
+}

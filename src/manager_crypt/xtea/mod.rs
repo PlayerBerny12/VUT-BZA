@@ -2,7 +2,9 @@
 
 use std::num::Wrapping;
 
-pub struct XTEAConfig;
+pub struct XTEAConfig{
+    pub number_of_rounds: u32
+}
 
 #[derive(Debug)]
 pub struct Key(pub [u32; 4]);

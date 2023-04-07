@@ -11,18 +11,18 @@ mod manager_crypt;
 mod manager_rng;
 
 /// High-level encryption method
-pub fn encrypt(profile: CryptographyManager, mut message: String, key: xtea::Key) -> Vec<u32> {
+pub fn encrypt(profile: &CryptographyManager, mut message: String, key: &xtea::Key) -> Vec<u32> {
     if profile.encryption == Encryption::XTEA {
-        profile.XTEA_encrypt(&mut message, key);
+        return profile.XTEA_encrypt(&mut message, key);
     }
 
     panic!("Not supported algorithm");
 }
 
 /// High-level decryption method
-pub fn decrypt(profile: CryptographyManager, mut message: Vec<u32>, key: xtea::Key) -> String {
+pub fn decrypt(profile: &CryptographyManager, mut message: Vec<u32>, key: &xtea::Key) -> String {
     if profile.encryption == Encryption::XTEA {
-        profile.XTEA_decrypt(&mut message, key);
+        return profile.XTEA_decrypt(&mut message, key);
     }
 
     panic!("Not supported algorithm");
@@ -39,6 +39,16 @@ mod tests {
 
     #[test]
     fn test() {
+        let seed: u32 = 5392047;
+        let mut rng_mng: manager_rng::RandomNumberGeneratorManager = manager_rng::RandomNumberGeneratorManager::new_PseudoRNG(&seed, 0, 1);
+        let mut rng_call_binding = &mut ||rng_mng.generator.next();
+        let mut crypt_mng = manager_crypt::CryptographyManager::new(rng_call_binding);
+        let key = crypt_mng.XTEA_generate_key();
+        let message: String = String::from("Ahoj světe!....");
         
+        let result = encrypt(&crypt_mng, message.clone(), &key);
+        let result2 = decrypt(&crypt_mng, result, &key);
+                
+        assert_eq!(message, result2);
     }
 }

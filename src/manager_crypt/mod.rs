@@ -16,22 +16,22 @@ pub enum Encryption {
 // Cryptography manager structure
 pub struct CryptographyManager<'a> {
     pub encryption: Encryption,
-    // rng: Box<dyn manager_rng::RNG>,
-    rng: &'a dyn Fn() -> u32,
+    rng: &'a mut dyn FnMut() -> u32,
     key_lenght: u32,
+
     #[cfg(feature = "xtea")]
     XTEAConfig: xtea::XTEAConfig,
 }
 
 // Impl for cryptography manager structure
 impl<'a> CryptographyManager<'a> {
-    pub fn new(rng: &'a dyn Fn() -> u32) -> Self {
+    pub fn new(rng: &'a mut dyn FnMut() -> u32) -> Self {
         #[cfg(feature = "xtea")]
         let xtea_config = xtea::XTEAConfig {
             number_of_rounds: 128,
         };
         CryptographyManager {
-            encryption: Encryption::NONE,
+            encryption: Encryption::XTEA,
             rng: rng,
             key_lenght: 0,
             #[cfg(feature = "xtea")]
@@ -40,22 +40,21 @@ impl<'a> CryptographyManager<'a> {
     }
 
     #[cfg(feature = "xtea")]
-    pub fn XTEA_encrypt(self, message: &mut String, key: xtea::Key) -> Vec<u32> {
+    pub fn XTEA_encrypt(&self, message: &mut String, key: &xtea::Key) -> Vec<u32> {
         let mut result: Vec<u32> = vec![];
         let mut bytesBuffer: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-        let mut dataBuffer: [u32; 2] = [0,0];
+        let mut dataBuffer: [u32; 2] = [0, 0];
         let mut index: usize = 0;
 
         for byte in message.as_bytes() {
             bytesBuffer[index] = *byte;
             index += 1;
-
+            
             if index == 8 {
                 index = 0;
                 dataBuffer[0] = u32::from_ne_bytes(bytesBuffer[0..4].try_into().unwrap());
                 dataBuffer[1] = u32::from_ne_bytes(bytesBuffer[4..8].try_into().unwrap());
                 xtea::encrypt(self.XTEAConfig.number_of_rounds, &mut dataBuffer, &key);
-
                 result.push(dataBuffer[0]);
                 result.push(dataBuffer[1]);
             }
@@ -65,31 +64,33 @@ impl<'a> CryptographyManager<'a> {
     }
 
     #[cfg(feature = "xtea")]
-    pub fn XTEA_decrypt(self, message: &mut Vec<u32>, key: xtea::Key) -> String {
-        let mut result: String = String::from("");  
+    pub fn XTEA_decrypt(&self, message: &mut Vec<u32>, key: &xtea::Key) -> String {
+        let mut result: Vec<u8> = vec![];  
         let mut bytesBuffer: [u8; 8] = [0, 0, 0, 0, 0, 0, 0, 0];
-        let mut dataBuffer: [u32; 2] = [0,0];
+        let mut dataBuffer: [u32; 2] = [0, 0];
         let mut index: usize = 0;
 
         for chunk in message {
             dataBuffer[index] = *chunk;
             index += 1;
 
-            if index == 2 {
+            if index == 2 {                
                 index = 0;
                 xtea::decrypt(self.XTEAConfig.number_of_rounds, &mut dataBuffer, &key);
-
+                
                 for i in 0..2 {
                     bytesBuffer[4 * i..][..4].copy_from_slice(&dataBuffer[i].to_ne_bytes());
                 }
+                
+                result.append(&mut bytesBuffer.to_vec());
             }
         }
 
-        result
+        String::from_utf8(result).unwrap()
     }
 
     #[cfg(feature = "xtea")]
-    pub fn XTEA_generate_key(self) -> xtea::Key {
+    pub fn XTEA_generate_key(&mut self) -> xtea::Key {       
         xtea::gen_key(self.rng)
     }
 }

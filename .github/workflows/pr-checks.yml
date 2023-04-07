@@ -24,6 +24,6 @@ jobs:
       run: cargo test --verbose
     - name: Install cargo-mutants  
       run: cargo install --locked cargo-mutants
-    - name: Install cargo-mutants  
+    - name: Run cargo-mutants  
       run: cargo mutants
       continue-on-error: true

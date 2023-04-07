@@ -2,7 +2,9 @@
 
 use std::num::Wrapping;
 
-pub struct XTEAConfig;
+pub struct XTEAConfig{
+    pub number_of_rounds: u32
+}
 
 #[derive(Debug)]
 pub struct Key(pub [u32; 4]);
@@ -15,10 +17,10 @@ pub fn encrypt(num_rounds: u32, data: &mut [u32; 2], key: &Key) {
     let mut delta: Wrapping<u32> = Wrapping(0x9E3779B9);
 
     for _ in 0..num_rounds {
-        v0 += ((((v1 << 4) ^ (v1 >> 5)) + v1) ^ Wrapping(sum.0 + key.0[(sum.0 & 3) as usize]));
+        v0 += ((((v1 << 4) ^ (v1 >> 5)) + v1) ^ (Wrapping(sum.0) + Wrapping(key.0[(sum.0 & 3) as usize])));
         sum += delta;
         v1 += ((((v0 << 4) ^ (v0 >> 5)) + v0)
-            ^ Wrapping(sum.0 + key.0[((sum.0 >> 11) & 3) as usize]));
+            ^ (Wrapping(sum.0) + Wrapping(key.0[((sum.0 >> 11) & 3) as usize])));
     }
 
     data[0] = v0.0;
@@ -34,9 +36,9 @@ pub fn decrypt(num_rounds: u32, data: &mut [u32; 2], key: &Key) {
 
     for _ in 0..num_rounds {
         v1 -=
-            (((v0 << 4) ^ (v0 >> 5)) + v0) ^ Wrapping(sum.0 + key.0[((sum.0 >> 11) & 3) as usize]);
+            (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (Wrapping(sum.0) + Wrapping(key.0[((sum.0 >> 11) & 3) as usize]));
         sum -= delta;
-        v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ Wrapping(sum.0 + key.0[(sum.0 & 3) as usize]);
+        v0 -= (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (Wrapping(sum.0) + Wrapping(key.0[(sum.0 & 3) as usize]));
     }
 
     data[0] = v0.0;
@@ -44,7 +46,7 @@ pub fn decrypt(num_rounds: u32, data: &mut [u32; 2], key: &Key) {
 }
 
 // Generates keypair for XTEA encryption/decryption
-pub fn gen_key(next_rng: &dyn Fn() -> u32) -> Key {
+pub fn gen_key(next_rng: &mut dyn FnMut() -> u32) -> Key {
     let mut k = Key([0, 0, 0, 0]);
     for i in k.0.iter_mut() {
         *i = next_rng();
@@ -87,21 +89,21 @@ mod tests {
         let seed = 0;
         let rngMut = Arc::new(Mutex::new(MockRNG::new(&seed)));
 
-        let key = gen_key(&|| rngMut.lock().unwrap().next());
+        let key = gen_key(&mut || rngMut.lock().unwrap().next());
 
         assert_eq!(key.0, [165448890, 42994, 78941639, 96])
     }
 
     #[test]
     fn test_encrypt_decrypt() {
-        let data_out = [123456789u32, 987654321u32];
+        let data_out = [123456789, 987654321];
         let mut data = data_out;
         let key = Key([100, 200, 300, 400]);
         let num_rounds = 128;
 
         encrypt(num_rounds, &mut data, &key);
 
-        assert_eq!(data, [2613847215u32, 3063251712u32]);
+        assert_eq!(data, [2613847215, 3063251712]);
 
         decrypt(num_rounds, &mut data, &key);
 

@@ -1,4 +1,5 @@
 //! eXtended Tiny Encryption Algorithm module
+// Reference for implementation: https://en.wikipedia.org/wiki/XTEA
 
 use std::num::Wrapping;
 

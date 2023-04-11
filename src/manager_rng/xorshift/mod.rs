@@ -1,4 +1,5 @@
 //! Pseudo random number generator module
+// Reference for implementation: https://www.jstatsoft.org/article/download/v008i14/916
 
 use super::RNG;
 use crate::manager_rng;
